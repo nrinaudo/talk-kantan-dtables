@@ -35,12 +35,13 @@ We'll be using FizzBuzz as our running example.
 
 ## FizzBuzz as a Decision Table
 
- n % 3 | n % 5 | Output
--------|-------|----------
- T     | T     | FizzBuzz
- T     | F     | Fizz
- F     | T     | Buzz
- F     | F     | n
+ n % 3 | n % 5 || Output
+-------|-------||----------
+ T     | T     || FizzBuzz
+ T     | F     || Fizz
+ F     | T     || Buzz
+ F     | F     || n
+
 
 --
 
@@ -227,6 +228,31 @@ class FizzBuzzTest extends FunSuite with DTables {
   }
 }
 ```
+
+---
+
+
+class: center, middle
+
+# Useful Example
+
+---
+
+## Implicit resolution
+
+ Implicit Scope | Explicit Import | Local Declaration || Result
+----------------|-----------------|-------------------||-----------
+ 0              |               0 |                 0 || Not Found
+ 1              |               0 |                 0 || Success
+ 2+             |               0 |                 0 || Ambiguous
+ -              |               1 |                 0 || Success
+ -              |              2+ |                 0 || Ambiguous
+ -              |               0 |                 1 || Success
+ -              |               0 |                2+ || Ambiguous
+ -              |              1+ |                1+ || Ambiguous
+
+_Conditions_ represent the number of candidates found.
+
 
 ---
 
