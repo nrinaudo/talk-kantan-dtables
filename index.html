@@ -210,7 +210,7 @@ implicit val outcomeDecoder: OutcomeDecoder[Int => String] =
     case "n"        => DecodeResult.success(_.toString)
     case "Fizz"     => DecodeResult.success(_ => "Fizz")
     case "FizzBuzz" => DecodeResult.success(_ => "FizzBuzz")
-    case "Buzz"     => DecodeResult.success(_ => "FizzBuzz")
+    case "Buzz"     => DecodeResult.success(_ => "Buzz")
     case s          => DecodeResult.error(s)
   }
 ```
