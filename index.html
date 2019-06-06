@@ -152,36 +152,11 @@ class: center, middle
 Our FizzBuzz decision table is stored as a CSV resource:
 
 ```scala
-val resource = getClass.getResource("/fizzbuzz.csv")
-```
-
---
-
-Here's what it looks like:
-
-```scala
-scala.io.Source.fromURL(resource).mkString
-// res0: String =
-// "n % 3,n % 5,,Output
-// T,T,,FizzBuzz
-// T,F,,Fizz
-// F,T,,Buzz
-// F,F,,n
-// "
-```
-
----
-
-## Decision tables as CSV .super[2]
-
-Helpers are provided to load the CSV data:
-
-```scala
 import kantan.dtables._
 import kantan.dtables.csv._
 
 val spec: Specification =
-  csv.load(resource).
+  csv.load(getClass.getResource("/fizzbuzz.csv")).
     getOrElse(sys.error("Failed to load fizzbuz specs"))
 ```
 
