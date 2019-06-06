@@ -77,7 +77,7 @@ import org.scalatest.FunSuite
 class FizzBuzzSuite extends FunSuite {
 
   test("n divisible by 3 and 5 outputs FizzBuzz") {
-    assert(fizzBuzz(15) == "FizzBuz")
+    assert(fizzBuzz(15) == "FizzBuzz")
   }
 
   test("n divisible by 3 but not 5 outputs Fizz") {
@@ -157,7 +157,7 @@ import kantan.dtables.csv._
 
 val spec: Specification =
   csv.load(getClass.getResource("/fizzbuzz.csv")).
-    getOrElse(sys.error("Failed to load fizzbuz specs"))
+    getOrElse(sys.error("Failed to load fizzbuzz specs"))
 ```
 
 ---
