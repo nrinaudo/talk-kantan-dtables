@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Decision Tables: a tool for lazy people</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="stylesheet" type="text/css" href="css/style.css"/>
+  </head>
+  <body>
+      <textarea id="source">
+class: center, middle
+
+# Decision Tables: a tool for lazy people
+
+Nicolas Rinaudo • [@NicolasRinaudo] • [Besedo]
+
+---
+
+## Overview
+
+Decision tables are a form of specifications that can be explained in a couple of minutes.
+
+I intend to show that they're useful for more than just specifications.
+
+We'll be using FizzBuzz as our running example.
+
+---
+
+## FizzBuzz
+
+> Write a program that prints the numbers from 1 to 100.
+> But for multiples of three print `Fizz` instead of the number and for the multiples of five print `Buzz`.
+> For numbers which are multiples of both three and five print `FizzBuzz`.
+
+---
+
+## FizzBuzz as a Decision Table
+
+ n % 3 | n % 5 || Output
+-------|-------||----------
+ T     | T     || FizzBuzz
+ T     | F     || Fizz
+ F     | T     || Buzz
+ F     | F     || n
+
+
+--
+
+* `n % 3` and `n % 5` are _conditions_
+* `Output` is an _outcome_
+
+--
+
+This can be written by non-coders.
+
+---
+
+## Implementing FizzBuzz
+
+```tut:silent
+def fizzBuzz(i: Int): String = {
+  if(i % 3 == 0) {
+    if(i % 5 == 0) "FizzBuzz"
+    else "Fizz"
+  }
+  else if(i % 5 == 0) "Buzz"
+  else i.toString
+}
+```
+
+---
+
+## Unit Testing FizzBuzz
+
+```tut:silent
+import org.scalatest.FunSuite
+
+class FizzBuzzSuite extends FunSuite {
+
+  test("n divisible by 3 and 5 outputs FizzBuzz") {
+    assert(fizzBuzz(15) == "FizzBuzz")
+  }
+
+  test("n divisible by 3 but not 5 outputs Fizz") {
+    assert(fizzBuzz(3) == "Fizz")
+  }
+
+  // ...
+}
+```
+
+--
+
+This handles too small a subset of the test space
+
+---
+
+## Property Testing FizzBuzz
+
+We'll need a generator of FizzBuzz-relevant integers:
+
+```tut:silent
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
+
+def genInt(div3: Boolean, div5: Boolean): Gen[Int] =
+  arbitrary[Int].suchThat { i =>
+    (!div3 || i % 3 == 0) &&
+    (!div5 || i % 5 == 0)
+  }
+```
+
+--
+
+.section[Note] in real life, do not use `suchThat`!
+
+---
+
+## Property Testing FizzBuzz .super[2]
+
+```tut:silent
+import org.scalacheck.Properties
+import org.scalacheck.Prop.forAll
+
+object FizzBuzzSpecifications extends Properties("FizzBuzz") {
+
+  property("n % 3, n % 5") = forAll(genInt(true, true)) { i =>
+    fizzBuzz(i) == "FizzBuzz"
+  }
+
+  property("n % 3") = forAll(genInt(true, false)) { i =>
+    fizzBuzz(i) == "Fizz"
+  }
+
+  // ...
+}
+```
+
+--
+
+Much better, but doesn't it feel like this could be automated from the decision table?
+
+---
+
+class: center, middle
+
+# kantan.dtables
+
+---
+
+## Decision tables as CSV
+
+Our FizzBuzz decision table is stored as a CSV resource:
+
+```tut:silent
+import kantan.dtables._
+import kantan.dtables.csv._
+
+val spec: Specification =
+  csv.load(getClass.getResource("/fizzbuzz.csv")).
+    getOrElse(sys.error("Failed to load fizzbuzz specs"))
+```
+
+---
+
+## Working with conditions
+
+Conditions are loaded through a common decoding process:
+
+```tut:silent
+import kantan.dtables.properties._
+
+implicit val genDecoder: ConditionsDecoder[Int] =
+  ConditionsDecoder.decoder("n % 3", "n % 5")(genInt)
+```
+
+---
+
+## Working with outcomes
+
+So are outcomes:
+
+```tut:silent
+implicit val outcomeDecoder: OutcomeDecoder[Int => String] =
+  OutcomeDecoder.fromEntry[String]("Output").emap {
+    case "n"        => DecodeResult.success(_.toString)
+    case "Fizz"     => DecodeResult.success(_ => "Fizz")
+    case "FizzBuzz" => DecodeResult.success(_ => "FizzBuzz")
+    case "Buzz"     => DecodeResult.success(_ => "Buzz")
+    case s          => DecodeResult.error(s)
+  }
+```
+
+---
+
+## Writing the test
+
+```tut:silent
+import kantan.dtables.scalatest._
+
+class FizzBuzzTest extends FunSuite with DTables {
+  checkAll("FizzBuzz", spec) { (i: Int, f: Int => String) =>
+    fizzBuzz(i) == f(i)
+  }
+}
+```
+
+---
+
+class: center, middle
+
+# Concrete Examples
+
+---
+
+## Scala implicit resolution
+
+
+ Implicit Scope | Explicit Import | Local Declaration || Result
+----------------|-----------------|-------------------||-----------
+ 0              |               0 |                 0 || Not Found
+ 1              |               0 |                 0 || Success
+ 2+             |               0 |                 0 || Ambiguous
+ -              |               1 |                 0 || Success
+ -              |              2+ |                 0 || Ambiguous
+ -              |               0 |                 1 || Success
+ -              |               0 |                2+ || Ambiguous
+ -              |              1+ |                1+ || Ambiguous
+
+---
+
+## Suggestions?
+
+I'd love suggestions of concrete business use cases to:
+* implement them using kantan.dtables
+* fix whatever flaws in my design they reveal
+
+
+---
+
+class: center, middle
+
+# Wrapping things up
+
+---
+
+## Conclusions
+
+Decision tables are:
+
+* A good specification tool, when applicable
+* A good test tool, when available
+--
+
+* Importantly, work that somebody else can do!
+
+---
+
+## More information
+
+Slides available on https://nrinaudo.github.io/talk-kantan-dtables/
+
+kantan.dtables POC available on https://github.com/nrinaudo/kantan.dtables
+
+Find me on Twitter ([@NicolasRinaudo])
+
+Get in touch with [Besedo], we're always on the lookout for Scala talent
+
+Slides backed by [remark.js](https://remarkjs.com/) and the amazing [tut](https://github.com/tpolecat/tut)
+
+---
+
+class: center, middle
+
+# Thanks!
+
+[@NicolasRinaudo]:https://twitter.com/NicolasRinaudo
+[Besedo]:https://twitter.com/besedo_official
+
+    </textarea>
+    <script src="js/remark.js" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+        var slideshow = remark.create({
+        highlightStyle: 'solarized-dark'
+      });
+    </script>
+  </body>
+</html>
